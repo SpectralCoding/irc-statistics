@@ -47,11 +47,24 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IRC\Channel.cs" />
+    <Compile Include="LogMgmt\LogWatcher.cs" />
+    <Compile Include="Processing\ChannelProcessor.cs" />
+    <Compile Include="Processing\ProcessManager.cs" />
+    <Compile Include="Processing\UserFacts.cs" />
+    <Compile Include="Processing\UserProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Support\Config.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\IRCShared\IRCShared.csproj">
+      <Project>{9f969bf3-3841-47aa-914e-ac9c20325ad7}</Project>
+      <Name>IRCShared</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
