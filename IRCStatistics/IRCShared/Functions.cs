@@ -187,11 +187,11 @@ namespace IRCShared {
 		}
 
 		/// <summary>
-		/// Converts milliseconds to a human readable format.
+		/// Converts milliseconds to a clock-like format.
 		/// </summary>
 		/// <param name="Milliseconds">Number of milliseconds to convert</param>
 		/// <returns>Returns a hh:mm:ss formated string.</returns>
-		public static String MillisecondsToHumanReadable(double Milliseconds) {
+		public static String MillisecondsToClockFormat(double Milliseconds) {
 			TimeSpan tempTS = new TimeSpan(0, 0, 0, 0, Convert.ToInt32(Milliseconds));
 			if (tempTS.Hours > 0) {
 				return tempTS.Hours.ToString() + ":" + tempTS.Minutes.ToString("00") + ":" + tempTS.Seconds.ToString("00");
@@ -199,6 +199,25 @@ namespace IRCShared {
 				return tempTS.Minutes.ToString() + ":" + tempTS.Seconds.ToString("00");
 			}
 		}
+
+		/// <summary>
+		/// Converts milliseconds to a human readable format.
+		/// </summary>
+		/// <param name="Milliseconds">Number of milliseconds to convert</param>
+		/// <returns>Returns a #d #h #m #s string.</returns>
+		public static String MillisecondsToHumanReadable(double Milliseconds) {
+			TimeSpan tempTS = new TimeSpan(0, 0, 0, 0, Convert.ToInt32(Milliseconds));
+			if (tempTS.Days > 0) {
+				return tempTS.Days + "d " + tempTS.Hours.ToString() + "h " + tempTS.Minutes.ToString() + "m " + tempTS.Seconds.ToString() + "s";
+			} else if (tempTS.Hours > 0) {
+				return tempTS.Hours.ToString() + "h " + tempTS.Minutes.ToString() + "m " + tempTS.Seconds.ToString() + "s";
+			} else if (tempTS.Minutes > 0) {
+				return tempTS.Minutes.ToString() + "m " + tempTS.Seconds.ToString() + "s";
+			} else {
+				return tempTS.Seconds.ToString() + "s";
+			}
+		}
+
 
 	}
 

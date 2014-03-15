@@ -43,7 +43,7 @@ namespace IRCLogger {
 					}
 				}
 				if (!ServerExists) {
-					Server TempServer = new Server();
+					Server TempServer = new Server(Servers);
 					TempServer.ID = Convert.ToInt32(CurNetwork["id"]);
 					TempServer.Hostname = CurNetwork["server"].ToString();
 					TempServer.Network = CurNetwork["name"].ToString();

@@ -31,6 +31,8 @@ namespace IRCLogger.IRC {
 				HandleLogout(Sender, Params);
 			} else if (Params[0].ToLower() == "!help") {
 				HandleHelp(Sender, Params);
+			} else if (Params[0].ToLower() == "!channels") {
+				HandleChannels(Sender, Params);
 			} else {
 				if (m_Administrators.Contains(Sender)) {
 					switch (Params[0].ToLower()) {
@@ -284,8 +286,20 @@ namespace IRCLogger.IRC {
 
 		public void HandleNotice(string Sender, string[] Params) {
 			if (IRCFunctions.GetNickFromHostString(Sender) == "NickServ") {
+				// If it's NickServ and it looks like an identify request, then identify.
 				if ((Array.IndexOf(Params, "nickname") > 0) && (Array.IndexOf(Params, "is") > 0) && ((Array.IndexOf(Params, "registered") > 0) || (Array.IndexOf(Params, "registered.") > 0))) {
 					m_ParentServer.Send(IRCFunctions.PrivMsg("NickServ", "identify " + Config.NickPass));
+				}
+			}
+		}
+
+		public void HandleChannels(string Sender, string[] Params) {
+			foreach (Server CurServer in m_ParentServer.Servers) {
+				m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Channels on " + CurServer.Hostname + ":"));
+				foreach (KeyValuePair<string, Channel> CurChannel in CurServer.Channels) {
+					TimeSpan tempTS = DateTime.Now.Subtract(CurChannel.Value.LastMessageTime);
+					m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - " + Functions.MillisecondsToHumanReadable(tempTS.TotalMilliseconds) + " ago:"));
+					m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "          " + CurChannel.Value.LastMessageText));
 				}
 			}
 		}

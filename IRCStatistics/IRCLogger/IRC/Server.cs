@@ -17,6 +17,8 @@ using IRCLogger.Logging;
 namespace IRCLogger.IRC {
 	public class Server {
 		public DBConnection MyDBConn;
+		public List<Server> Servers;
+		public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>(StringComparer.InvariantCultureIgnoreCase);
 		private string m_ServerHost;
 		private int m_ServerPort;
 		private string m_ServerPass;
@@ -26,7 +28,6 @@ namespace IRCLogger.IRC {
 		private string m_Network;
 		private int m_ID;
 		private ServerComm m_ServerComm;
-		private Dictionary<string, Channel> m_Channels = new Dictionary<string, Channel>(StringComparer.InvariantCultureIgnoreCase);
 		private BotCommands m_BotCommands;
 		private NetworkLog m_NetworkLog;
 		private ConnectionWatchdog m_ConnectionWatchdog = null;
@@ -39,6 +40,10 @@ namespace IRCLogger.IRC {
 		public string AltNick { get { return m_AltNick; } set { m_AltNick = value; } }
 		public string Network { get { return m_Network; } set { m_Network = value; } }
 		public int ID { get { return m_ID; } set { m_ID = value; } }
+
+		public Server(List<Server> ServerList) {
+			Servers = ServerList;
+		}
 
 		public void Connect() {
 			MyDBConn = new DBConnection();
@@ -93,7 +98,7 @@ namespace IRCLogger.IRC {
 							ParamSplit[i + 1] = ParamSplit[i + 1].Substring(1);
 							string[] NameArr = new string[ParamSplit.Length - i - 1];
 							Array.Copy(ParamSplit, i + 1, NameArr, 0, ParamSplit.Length - i - 1);
-							m_Channels[ParamSplit[i]].Names(NameArr);
+							Channels[ParamSplit[i]].Names(NameArr);
 							break;
 						}
 					}
@@ -107,12 +112,12 @@ namespace IRCLogger.IRC {
 					// Channel Forward
 					// :adams.freenode.net 470 SomethingKewl #windows ##windows :Forwarding to another channel
 					Channel OldChannel;
-					if (m_Channels.ContainsKey(ParamSplit[1])) {
-						OldChannel = m_Channels[ParamSplit[1]];
+					if (Channels.ContainsKey(ParamSplit[1])) {
+						OldChannel = Channels[ParamSplit[1]];
 						OldChannel.Name = ParamSplit[2];
 						// Should we really remove the old channel? Does it hurt?
 						//m_Channels.Remove(ParamSplit[1]);
-						m_Channels.Add(OldChannel.Name, OldChannel);
+						Channels.Add(OldChannel.Name, OldChannel);
 						// TODO: add code here to check for old channel and rename it.
 					} else {
 						// Conceivably this could happen if you were forcejoined to a channel which then got moved.
@@ -127,25 +132,25 @@ namespace IRCLogger.IRC {
 						// Fix because some IRCds send "JOIN :#channel" instead of "JOIN #channel"
 						ParamSplit[0] = ParamSplit[0].Substring(1);
 					}
-					m_Channels[ParamSplit[0]].Join(Sender);
+					Channels[ParamSplit[0]].Join(Sender);
 					break;
 				case "PART":
 					if (ParamSplit.Length >= 2) {
 						string PartMsg = Parameters.Substring(Parameters.IndexOf(":") + 1);
 						if (PartMsg.Length == 0) {
-							m_Channels[ParamSplit[0]].Part(Sender, String.Empty);
+							Channels[ParamSplit[0]].Part(Sender, String.Empty);
 						} else {
 							if ((PartMsg.Substring(0, 1) == "\"") && (PartMsg.Substring(PartMsg.Length - 1, 1) == "\"")) {
 								PartMsg = PartMsg.Substring(1, PartMsg.Length - 2);
 							}
 						}
-						m_Channels[ParamSplit[0]].Part(Sender, PartMsg);
+						Channels[ParamSplit[0]].Part(Sender, PartMsg);
 					} else {
-						m_Channels[ParamSplit[0]].Part(Sender, String.Empty);
+						Channels[ParamSplit[0]].Part(Sender, String.Empty);
 					}
 					break;
 				case "KICK":
-					m_Channels[ParamSplit[0]].Kick(Sender, ParamSplit[1], Functions.CombineAfterIndex(ParamSplit, " ", 2).Substring(1));
+					Channels[ParamSplit[0]].Kick(Sender, ParamSplit[1], Functions.CombineAfterIndex(ParamSplit, " ", 2).Substring(1));
 					break;
 				case "INVITE":
 					// TODO: Not sure how we want to handle this.
@@ -154,24 +159,24 @@ namespace IRCLogger.IRC {
 					if (IRCFunctions.GetNickFromHostString(Sender) == m_Nick) {
 						m_Nick = Parameters.Substring(1);
 					}
-					foreach (KeyValuePair<string, Channel> CurKVP in m_Channels) {
-						m_Channels[CurKVP.Key].Nick(Sender, Parameters.Substring(1));
+					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
+						Channels[CurKVP.Key].Nick(Sender, Parameters.Substring(1));
 					}
 					m_BotCommands.CheckAdminChange(Sender, Parameters.Substring(1));
 					break;
 				case "QUIT":
-					foreach (KeyValuePair<string, Channel> CurKVP in m_Channels) {
-						m_Channels[CurKVP.Key].Quit(Sender, Parameters.Substring(1));
+					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
+						Channels[CurKVP.Key].Quit(Sender, Parameters.Substring(1));
 					}
 					break;
 				case "TOPIC":
 					string Topic = Parameters.Substring(Parameters.IndexOf(":") + 1);
-					m_Channels[ParamSplit[0]].Topic(Sender, Topic);
+					Channels[ParamSplit[0]].Topic(Sender, Topic);
 					break;
 				case "MODE":
 					if (ParamSplit[0].Substring(0, 1) == "#") {
 						// Is a channel mode
-						m_Channels[ParamSplit[0]].Mode(Sender, Functions.CombineAfterIndex(ParamSplit, " ", 1));
+						Channels[ParamSplit[0]].Mode(Sender, Functions.CombineAfterIndex(ParamSplit, " ", 1));
 					} else {
 						// Is not going to a channel. Probably me?
 					}
@@ -186,13 +191,13 @@ namespace IRCLogger.IRC {
 							string[] PrivMsgSplit = MsgText.Split(" ".ToCharArray(), 2);
 							switch (PrivMsgSplit[0].ToUpper()) {
 								case "ACTION":
-									m_Channels[ParamSplit[0]].Action(Sender, PrivMsgSplit[1]);
+									Channels[ParamSplit[0]].Action(Sender, PrivMsgSplit[1]);
 									break;
 								// Maybe other stuff goes here like channel wide CTCPs?
 							}
 						} else {
 							// If this is just a normal PRIVMSG.
-							m_Channels[ParamSplit[0]].Message(Sender, MsgText);
+							Channels[ParamSplit[0]].Message(Sender, MsgText);
 						}
 					} else {
 						// Is not going to a channel. Probably just me?
@@ -241,7 +246,7 @@ namespace IRCLogger.IRC {
 			bool ChannelExists;
 			foreach (DataRow CurChannel in ChannelTable.Rows) {
 				ChannelExists = false;
-				foreach (KeyValuePair<string, Channel> CurKVP in m_Channels) {
+				foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
 					if (CurKVP.Value.ID == Convert.ToInt32(CurChannel["id"])) {
 						ChannelExists = true;
 					}
@@ -254,7 +259,7 @@ namespace IRCLogger.IRC {
 					TempChan.StatsEnabled = Convert.ToBoolean(CurChannel["statsenabled"]);
 					TempChan.ID = Convert.ToInt32(CurChannel["id"]);
 					TempChan.NetworkID = Convert.ToInt32(CurChannel["networkid"]);
-					m_Channels.Add(CurChannel["name"].ToString(), TempChan);
+					Channels.Add(CurChannel["name"].ToString(), TempChan);
 					TempChan.JoinMe();
 				}
 			}

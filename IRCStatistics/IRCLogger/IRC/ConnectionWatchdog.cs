@@ -21,7 +21,7 @@ namespace IRCLogger.IRC {
 		}
 
 		public void Reset() {
-			AppLog.WriteLine(5, "TIMR", "Ping Timer Reset...");
+			//AppLog.WriteLine(5, "TIMR", "Ping Timer Reset...");
 			if (m_DetectDisconnectTimer != null) {
 				AppLog.WriteLine(5, "TIMR", "Disconnect Timer Destroyed...");
 				m_DetectDisconnectTimer.Dispose();
