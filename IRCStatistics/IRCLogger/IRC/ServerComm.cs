@@ -20,6 +20,9 @@ namespace IRCLogger.IRC {
 		private Server ParentServer;
 
 		public void StartClient(Server i_ParentServer) {
+			if ((ClientSock != null) && (ClientSock.Connected)) {
+				Close(ClientSock);
+			}
 			ParentServer = i_ParentServer;
 			AppLog.WriteLine(5, "STATUS", "Entering IRC.Server.StartClient().");
 			int i = 0;
@@ -82,6 +85,8 @@ namespace IRCLogger.IRC {
 						}
 					}
 					SockHandler.BeginReceive(ServerComm.Buffer, 0, IRCComm.BufferSize, 0, new AsyncCallback(OnDataReceived), ServerComm);
+				} else {
+					Close(SockHandler);
 				}
 			} catch (SocketException Se) {
 				if (Se.ErrorCode == 10054) {
@@ -104,8 +109,10 @@ namespace IRCLogger.IRC {
 		}
 
 		public void Close(Socket SockHandler) {
-			SockHandler.Shutdown(SocketShutdown.Both);
-			SockHandler.Close();
+			try {
+				SockHandler.Shutdown(SocketShutdown.Both);
+				SockHandler.Close();
+			} catch (Exception) { }
 		}
 	}
 }

@@ -16,6 +16,8 @@ namespace IRCLogger.Support {
 		private static string m_SQLTablePrefix;
 		private static string m_AdminPass;
 		private static string m_NickPass;
+		private static int m_InactivityTimeout;
+		private static int m_PingTimeout;
 
 		public static string SQLServerHost { get { return m_SQLServerHost; } set { m_SQLServerHost = value; } }
 		public static int SQLServerPort { get { return m_SQLServerPort; } set { m_SQLServerPort = value; } }
@@ -25,6 +27,8 @@ namespace IRCLogger.Support {
 		public static string SQLTablePrefix { get { return m_SQLTablePrefix; } set { m_SQLTablePrefix = value; } }
 		public static string AdminPass { get { return m_AdminPass; } set { m_AdminPass = value; } }
 		public static string NickPass { get { return m_NickPass; } set { m_NickPass = value; } }
+		public static int InactivityTimeout { get { return m_InactivityTimeout; } set { m_InactivityTimeout = value; } }
+		public static int PingTimeout { get { return m_PingTimeout; } set { m_PingTimeout = value; } }
 
 		public static void LoadConfig() {
 			if (File.Exists("IRCLogger.conf")) {
@@ -59,6 +63,12 @@ namespace IRCLogger.Support {
 								break;
 							case "nickpass":
 								m_NickPass = CurLineSplit[1];
+								break;
+							case "inactivitytimeout":
+								m_InactivityTimeout = Convert.ToInt32(CurLineSplit[1]);
+								break;
+							case "pingtimeout":
+								m_PingTimeout = Convert.ToInt32(CurLineSplit[1]);
 								break;
 							default:
 								AppLog.WriteLine(1, "ERROR", "Unknown Configuration Option: " + CurLineSplit[0] + " = " + CurLineSplit[1]);

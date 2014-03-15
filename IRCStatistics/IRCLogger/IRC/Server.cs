@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Net;
 using System.Net.Sockets;
@@ -28,6 +29,7 @@ namespace IRCLogger.IRC {
 		private Dictionary<string, Channel> m_Channels = new Dictionary<string, Channel>(StringComparer.InvariantCultureIgnoreCase);
 		private BotCommands m_BotCommands;
 		private NetworkLog m_NetworkLog;
+		private ConnectionWatchdog m_ConnectionWatchdog = null;
 
 		public string Hostname { get { return m_ServerHost; } set { m_ServerHost = value; } }
 		public int Port { get { return m_ServerPort; } set { m_ServerPort = value; } }
@@ -71,13 +73,15 @@ namespace IRCLogger.IRC {
 		}
 
 		public void Parse(string Sender, string Command, string Parameters) {
-			AppLog.WriteLine(5, "DEBUG", "\tSender: " + Sender);
-			AppLog.WriteLine(5, "DEBUG", "\tCommand: " + Command);
-			AppLog.WriteLine(5, "DEBUG", "\tParameters: " + Parameters);
+			//AppLog.WriteLine(5, "DEBUG", "\tSender: " + Sender);
+			//AppLog.WriteLine(5, "DEBUG", "\tCommand: " + Command);
+			//AppLog.WriteLine(5, "DEBUG", "\tParameters: " + Parameters);
+			if (m_ConnectionWatchdog != null) { m_ConnectionWatchdog.Reset(); }
 			string[] ParamSplit = Parameters.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 			switch (Command.ToUpper()) {
 				case "376":
 					// RAW: 376 - RPL_ENDOFMOTD - ":End of /MOTD command"
+					m_ConnectionWatchdog = new ConnectionWatchdog(this);
 					JoinChannels();
 					break;
 				case "353":
@@ -257,6 +261,10 @@ namespace IRCLogger.IRC {
 		}
 		public void Send(string DataToSend) {
 			m_ServerComm.Send(DataToSend);
+		}
+
+		public void SendPing() {
+			Send("PING " + m_ServerHost);
 		}
 	}
 }
