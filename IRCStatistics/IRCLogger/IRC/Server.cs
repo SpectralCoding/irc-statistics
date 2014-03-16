@@ -18,7 +18,10 @@ namespace IRCLogger.IRC {
 	public class Server {
 		public DBConnection MyDBConn;
 		public List<Server> Servers;
-		public Dictionary<string, Channel> Channels = new Dictionary<string, Channel>(StringComparer.InvariantCultureIgnoreCase);
+		public Dictionary<string, Channel> Channels;
+		public NetworkLog NetworkLog;
+		public BotCommands BotCommands;
+		public ConnectionWatchdog ConnectionWatchdog;
 		private string m_ServerHost;
 		private int m_ServerPort;
 		private string m_ServerPass;
@@ -28,9 +31,7 @@ namespace IRCLogger.IRC {
 		private string m_Network;
 		private int m_ID;
 		private ServerComm m_ServerComm;
-		private BotCommands m_BotCommands;
-		private NetworkLog m_NetworkLog;
-		private ConnectionWatchdog m_ConnectionWatchdog = null;
+
 
 		public string Hostname { get { return m_ServerHost; } set { m_ServerHost = value; } }
 		public int Port { get { return m_ServerPort; } set { m_ServerPort = value; } }
@@ -47,17 +48,18 @@ namespace IRCLogger.IRC {
 
 		public void Connect() {
 			MyDBConn = new DBConnection();
+			Channels = new Dictionary<string, Channel>(StringComparer.InvariantCultureIgnoreCase);
 			MyDBConn.Connect(Config.SQLServerHost, Config.SQLServerPort, Config.SQLUsername, Config.SQLPassword, Config.SQLDatabase);
-			m_BotCommands = new BotCommands(this);
+			BotCommands = new BotCommands(this);
 			AppLog.WriteLine(3, "STATUS", "Connecting to Server ID " + m_ID);
-			m_NetworkLog = new NetworkLog(ID, Network);
+			NetworkLog = new NetworkLog(ID, Network);
 			m_ServerComm = new IRC.ServerComm();
 			m_ServerComm.StartClient(this);
 		}
 
 		public void ParseRawLine(string LineToParse) {
 			AppLog.WriteLine(5, "DATA", m_Network + ": IN: " + LineToParse);
-			m_NetworkLog.WriteLine(LineToParse);
+			NetworkLog.WriteLine(LineToParse);
 			if (LineToParse.Substring(0, 1) == ":") {
 				LineToParse = LineToParse.Substring(1);
 				string[] ParameterSplit = LineToParse.Split(" ".ToCharArray(), 3, StringSplitOptions.RemoveEmptyEntries);
@@ -81,12 +83,12 @@ namespace IRCLogger.IRC {
 			//AppLog.WriteLine(5, "DEBUG", "\tSender: " + Sender);
 			//AppLog.WriteLine(5, "DEBUG", "\tCommand: " + Command);
 			//AppLog.WriteLine(5, "DEBUG", "\tParameters: " + Parameters);
-			if (m_ConnectionWatchdog != null) { m_ConnectionWatchdog.Reset(); }
+			if (ConnectionWatchdog != null) { ConnectionWatchdog.Reset(); }
 			string[] ParamSplit = Parameters.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 			switch (Command.ToUpper()) {
 				case "376":
 					// RAW: 376 - RPL_ENDOFMOTD - ":End of /MOTD command"
-					m_ConnectionWatchdog = new ConnectionWatchdog(this);
+					ConnectionWatchdog = new ConnectionWatchdog(this);
 					JoinChannels();
 					break;
 				case "353":
@@ -162,7 +164,7 @@ namespace IRCLogger.IRC {
 					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
 						Channels[CurKVP.Key].Nick(Sender, Parameters.Substring(1));
 					}
-					m_BotCommands.CheckAdminChange(Sender, Parameters.Substring(1));
+					BotCommands.CheckAdminChange(Sender, Parameters.Substring(1));
 					break;
 				case "QUIT":
 					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
@@ -222,14 +224,14 @@ namespace IRCLogger.IRC {
 						} else {
 							// Private Message directly to me.
 							string[] MsgSplitPrv = MsgText.Split(" ".ToCharArray());
-							m_BotCommands.HandlePM(Sender, MsgSplitPrv);
+							BotCommands.HandlePM(Sender, MsgSplitPrv);
 						}
 					}
 					break;
 				case "NOTICE":
 					// Needed for NickServ stuff
 					string[] MsgSplitNtc = Parameters.Substring(Parameters.IndexOf(":") + 1).Split(" ".ToCharArray());
-					m_BotCommands.HandleNotice(Sender, MsgSplitNtc);
+					BotCommands.HandleNotice(Sender, MsgSplitNtc);
 					break;
 			}
 		}
@@ -264,12 +266,12 @@ namespace IRCLogger.IRC {
 				}
 			}
 		}
-		public void Send(string DataToSend) {
-			m_ServerComm.Send(DataToSend);
+		public bool Send(string DataToSend) {
+			return m_ServerComm.Send(DataToSend);
 		}
 
-		public void SendPing() {
-			Send("PING " + m_ServerHost);
+		public bool SendPing() {
+			return Send("PING " + m_ServerHost);
 		}
 	}
 }

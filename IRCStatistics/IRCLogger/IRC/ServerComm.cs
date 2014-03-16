@@ -95,11 +95,17 @@ namespace IRCLogger.IRC {
 			}
 		}
 
-		public void Send(string DataToSend) {
-			AppLog.WriteLine(5, "DATA", ParentServer.Network + ": OUT: " + DataToSend);
-			DataToSend += "\n";
-			byte[] NewData = new byte[DataToSend.Length];
-			ClientSock.BeginSend(Encoding.UTF8.GetBytes(DataToSend), 0, DataToSend.Length, 0, new AsyncCallback(OnSendComplete), ClientSock);
+		public bool Send(string DataToSend) {
+			if (ClientSock.Connected) {
+				AppLog.WriteLine(5, "DATA", ParentServer.Network + ": OUT: " + DataToSend);
+				DataToSend += "\n";
+				byte[] NewData = new byte[DataToSend.Length];
+				ClientSock.BeginSend(Encoding.UTF8.GetBytes(DataToSend), 0, DataToSend.Length, 0, new AsyncCallback(OnSendComplete), ClientSock);
+				return true;
+			} else {
+				ParentServer.Connect();
+				return false;
+			}
 		}
 
 		private void OnSendComplete(IAsyncResult AsyncResult) {
@@ -110,8 +116,17 @@ namespace IRCLogger.IRC {
 
 		public void Close(Socket SockHandler) {
 			try {
+				AppLog.WriteLine(5, "CONN", "Connection Closed: " + ParentServer.Network);
 				SockHandler.Shutdown(SocketShutdown.Both);
 				SockHandler.Close();
+				ParentServer.NetworkLog.CloseLog();
+				ParentServer.Channels = null;
+				ParentServer.BotCommands = null;
+				ParentServer.ConnectionWatchdog.Destroy();
+				ParentServer.ConnectionWatchdog = null;
+				AppLog.WriteLine(5, "CONN", "Everything cleaned up, sleeping for 5 sec until reconnect attempt...");
+				Thread.Sleep(5000);
+				ParentServer.Connect();
 			} catch (Exception) { }
 		}
 	}

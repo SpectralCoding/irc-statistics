@@ -22,7 +22,12 @@ namespace IRCLogger.Logging {
 			if (!Directory.Exists("chatlogs/")) {
 				Directory.CreateDirectory("chatlogs/");
 			}
-			m_LogFile = new FileStream(@"chatlogs/" + String.Format("{0}_{1}_{2:yyyyMMdd-HH}.log", m_Network, m_ID, DateTime.Now), FileMode.Create, FileAccess.ReadWrite);
+			string logname = @"chatlogs/" + String.Format("{0}_{1}_{2:yyyyMMdd-HH}.log", m_Network, m_ID, DateTime.Now);
+			if (File.Exists(logname)) {
+				m_LogFile = new FileStream(@"chatlogs/" + String.Format("{0}_{1}_{2:yyyyMMdd-HH}.log", m_Network, m_ID, DateTime.Now), FileMode.Append, FileAccess.Write);
+			} else {
+				m_LogFile = new FileStream(@"chatlogs/" + String.Format("{0}_{1}_{2:yyyyMMdd-HH}.log", m_Network, m_ID, DateTime.Now), FileMode.Create, FileAccess.Write);
+			}
 			m_LogStream = new StreamWriter(m_LogFile);
 			m_LogStream.AutoFlush = true;
 			WriteLine("Opened: " + DateTime.UtcNow, true);

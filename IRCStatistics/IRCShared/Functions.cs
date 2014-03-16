@@ -206,7 +206,12 @@ namespace IRCShared {
 		/// <param name="Milliseconds">Number of milliseconds to convert</param>
 		/// <returns>Returns a #d #h #m #s string.</returns>
 		public static String MillisecondsToHumanReadable(double Milliseconds) {
-			TimeSpan tempTS = new TimeSpan(0, 0, 0, 0, Convert.ToInt32(Milliseconds));
+			TimeSpan tempTS;
+			if (Milliseconds > Int32.MaxValue) {
+				tempTS = new TimeSpan(0, 0, 0, Convert.ToInt32((Milliseconds - Int32.MaxValue) / 1000), Int32.MaxValue);
+			} else {
+				tempTS = new TimeSpan(0, 0, 0, 0, Convert.ToInt32(Milliseconds));
+			}
 			if (tempTS.Days > 0) {
 				return tempTS.Days + "d " + tempTS.Hours.ToString() + "h " + tempTS.Minutes.ToString() + "m " + tempTS.Seconds.ToString() + "s";
 			} else if (tempTS.Hours > 0) {

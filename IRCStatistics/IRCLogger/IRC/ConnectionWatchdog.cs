@@ -20,6 +20,11 @@ namespace IRCLogger.IRC {
 			AppLog.WriteLine(5, "TIMR", "Ping Timer Started...");
 		}
 
+		public void Destroy() {
+			if (m_DetectDisconnectTimer != null) { m_DetectDisconnectTimer.Dispose(); }
+			if (m_InitiatePingTimer != null) { m_InitiatePingTimer.Dispose(); }
+		}
+
 		public void Reset() {
 			//AppLog.WriteLine(5, "TIMR", "Ping Timer Reset...");
 			if (m_DetectDisconnectTimer != null) {
@@ -32,11 +37,13 @@ namespace IRCLogger.IRC {
 
 		public void SendPing(object IRCServer) {
 			AppLog.WriteLine(5, "TIMR", "No activity after " + Config.InactivityTimeout + " seconds. Ping Timer Executed!");
-			m_IRCServer.SendPing();
-			TimerCallback DisconnectTimerDelegate = new TimerCallback(Disconnected);
-			m_DetectDisconnectTimer = new Timer(DisconnectTimerDelegate, IRCServer, Config.PingTimeout * 1000, Timeout.Infinite);
-			AppLog.WriteLine(5, "TIMR", "Disconnect Timer Started...");
-			//m_InitiatePingTimer.Change(Config.InactivityTimeout, Timeout.Infinite);
+			bool StillConnected = m_IRCServer.SendPing();
+			if (StillConnected == true) {
+				TimerCallback DisconnectTimerDelegate = new TimerCallback(Disconnected);
+				m_DetectDisconnectTimer = new Timer(DisconnectTimerDelegate, IRCServer, Config.PingTimeout * 1000, Timeout.Infinite);
+				AppLog.WriteLine(5, "TIMR", "Disconnect Timer Started...");
+				//m_InitiatePingTimer.Change(Config.InactivityTimeout, Timeout.Infinite);
+			}
 		}
 
 		public void Disconnected(object IRCServer) {

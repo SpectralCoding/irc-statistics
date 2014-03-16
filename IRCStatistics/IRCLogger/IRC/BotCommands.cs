@@ -31,8 +31,6 @@ namespace IRCLogger.IRC {
 				HandleLogout(Sender, Params);
 			} else if (Params[0].ToLower() == "!help") {
 				HandleHelp(Sender, Params);
-			} else if (Params[0].ToLower() == "!channels") {
-				HandleChannels(Sender, Params);
 			} else {
 				if (m_Administrators.Contains(Sender)) {
 					switch (Params[0].ToLower()) {
@@ -68,6 +66,9 @@ namespace IRCLogger.IRC {
 						case "!rehash":
 							// This may need to change in the future.
 							Program.ConnectToServers();
+							break;
+						case "!channels":
+							HandleChannels(Sender, Params);
 							break;
 					}
 				} else {
@@ -114,10 +115,11 @@ namespace IRCLogger.IRC {
 					case "login": m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Login Command: !login <Password>")); break;
 					case "logout": m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Logout Command: !logout")); break;
 					case "rehash": m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Rehash Command: !rehash")); break;
+					case "channels": m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Channels Command: !channels")); break;
 				}
 			} else {
 				// All help commands
-				m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Help Command: !help [add|delete|help|login|logout|rehash]"));
+				m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Help Command: !help [add|delete|channels|help|login|logout|rehash]"));
 			}
 		}
 
@@ -297,9 +299,12 @@ namespace IRCLogger.IRC {
 			foreach (Server CurServer in m_ParentServer.Servers) {
 				m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "Channels on " + CurServer.Hostname + ":"));
 				foreach (KeyValuePair<string, Channel> CurChannel in CurServer.Channels) {
-					TimeSpan tempTS = DateTime.Now.Subtract(CurChannel.Value.LastMessageTime);
-					m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - " + Functions.MillisecondsToHumanReadable(tempTS.TotalMilliseconds) + " ago:"));
-					m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "          " + CurChannel.Value.LastMessageText));
+					if (CurChannel.Value.LastMessageTime == null) {
+						m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - Never"));
+					} else {
+						TimeSpan tempTS = DateTime.Now.Subtract(CurChannel.Value.LastMessageTime);
+						m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - " + Functions.MillisecondsToHumanReadable(tempTS.TotalMilliseconds) + " ago: " + CurChannel.Value.LastMessageText));
+					}
 				}
 			}
 		}
