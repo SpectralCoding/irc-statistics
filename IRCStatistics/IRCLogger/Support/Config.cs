@@ -77,7 +77,7 @@ namespace IRCLogger.Support {
 					}
 				}
 			} else {
-				AppLog.WriteLine(1, "ERROR", "No Configuration File Found. Did you copy IRCStatistics.sample.conf and change the settings?");
+				AppLog.WriteLine(1, "ERROR", "No Configuration File Found. Did you copy IRCLogger.sample.conf and change the settings?");
 			}
 		}
 	}

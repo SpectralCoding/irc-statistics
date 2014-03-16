@@ -14,8 +14,6 @@ namespace IRCStatistician.Support {
 		private static string m_SQLPassword;
 		private static string m_SQLDatabase;
 		private static string m_SQLTablePrefix;
-		private static string m_AdminPass;
-		private static string m_NickPass;
 
 		public static string SQLServerHost { get { return m_SQLServerHost; } set { m_SQLServerHost = value; } }
 		public static int SQLServerPort { get { return m_SQLServerPort; } set { m_SQLServerPort = value; } }
@@ -23,11 +21,8 @@ namespace IRCStatistician.Support {
 		public static string SQLPassword { get { return m_SQLPassword; } set { m_SQLPassword = value; } }
 		public static string SQLDatabase { get { return m_SQLDatabase; } set { m_SQLDatabase = value; } }
 		public static string SQLTablePrefix { get { return m_SQLTablePrefix; } set { m_SQLTablePrefix = value; } }
-		public static string AdminPass { get { return m_AdminPass; } set { m_AdminPass = value; } }
-		public static string NickPass { get { return m_NickPass; } set { m_NickPass = value; } }
-
 		public static void LoadConfig() {
-			if (File.Exists("IRCLogger.conf")) {
+			if (File.Exists("IRCStatistician.conf")) {
 				AppLog.WriteLine(1, "STATUS", "Loading configuration from IRCStatistician.conf");
 				string CurLine;
 				StreamReader ConfigFile = new StreamReader("IRCStatistician.conf");
@@ -54,12 +49,6 @@ namespace IRCStatistician.Support {
 							case "sqltableprefix":
 								m_SQLTablePrefix = CurLineSplit[1];
 								break;
-							case "adminpass":
-								m_AdminPass = CurLineSplit[1];
-								break;
-							case "nickpass":
-								m_NickPass = CurLineSplit[1];
-								break;
 							default:
 								AppLog.WriteLine(1, "ERROR", "Unknown Configuration Option: " + CurLineSplit[0] + " = " + CurLineSplit[1]);
 								break;
@@ -67,7 +56,7 @@ namespace IRCStatistician.Support {
 					}
 				}
 			} else {
-				AppLog.WriteLine(1, "ERROR", "No Configuration File Found. Did you copy IRCStatistics.sample.conf and change the settings?");
+				AppLog.WriteLine(1, "ERROR", "No Configuration File Found. Did you copy IRCStatistician.sample.conf and change the settings?");
 			}
 		}
 	}
