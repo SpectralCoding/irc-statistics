@@ -51,7 +51,6 @@
     <Compile Include="IRC\Channel.cs" />
     <Compile Include="IRC\ConnectionWatchdog.cs" />
     <Compile Include="IRC\IRCComm.cs" />
-    <Compile Include="IRC\IRCFunctions.cs" />
     <Compile Include="IRC\Server.cs" />
     <Compile Include="IRC\ServerComm.cs" />
     <Compile Include="Logging\NetworkLog.cs" />

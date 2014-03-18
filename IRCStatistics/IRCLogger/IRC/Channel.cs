@@ -64,21 +64,21 @@ namespace IRCLogger.IRC {
 			} else {
 				AppLog.WriteLine(1, "ERROR", "User " + Sender + " tried to join channel. IRC let it happen, but they're already in my userlist. Why?");
 			}
-			LastMessageText = "JOIN: " + Sender; LastMessageTime = DateTime.Now;
+			LastMessageText = "JOIN: " + Sender; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Part(string Sender, string Message) {
 			if (m_Users.Contains(IRCFunctions.GetNickFromHostString(Sender).ToLower())) {
 				m_Users.Remove(IRCFunctions.GetNickFromHostString(Sender).ToLower());
 			}
-			LastMessageText = "PART: " + Sender; LastMessageTime = DateTime.Now;
+			LastMessageText = "PART: " + Sender; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Kick(string Sender, string PersonKicked, string KickMsg) {
 			if (m_Users.Contains(PersonKicked.ToLower())) {
 				m_Users.Remove(PersonKicked.ToLower());
 			}
-			LastMessageText = "KICK: " + Sender + " kicked " + PersonKicked + " (" + KickMsg + ")"; LastMessageTime = DateTime.Now;
+			LastMessageText = "KICK: " + Sender + " kicked " + PersonKicked + " (" + KickMsg + ")"; LastMessageTime = DateTime.UtcNow;
 			if (PersonKicked == m_ParentServer.Nick) {
 				if (m_AutoRejoin) {
 					// If I was kicked and autorejoin is enabled.
@@ -90,24 +90,24 @@ namespace IRCLogger.IRC {
 		public void Quit(string Sender, string Message) {
 			if (m_Users.Contains(IRCFunctions.GetNickFromHostString(Sender).ToLower())) {
 				m_Users.Remove(IRCFunctions.GetNickFromHostString(Sender).ToLower());
-				LastMessageText = "QUIT: " + Sender; LastMessageTime = DateTime.Now;
+				LastMessageText = "QUIT: " + Sender; LastMessageTime = DateTime.UtcNow;
 			}
 		}
 
 		public void Message(string Sender, string Message) {
-			LastMessageText = "PRIVMSG: " + Sender + ": " + Message; LastMessageTime = DateTime.Now;
+			LastMessageText = "PRIVMSG: " + Sender + ": " + Message; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Action(string Sender, string Message) {
-			LastMessageText = "ACTION: " + Sender + ": " + Message; LastMessageTime = DateTime.Now;
+			LastMessageText = "ACTION: " + Sender + ": " + Message; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Topic(string Sender, string Message) {
-			LastMessageText = "TOPIC: " + Sender + ": " + Message; LastMessageTime = DateTime.Now;
+			LastMessageText = "TOPIC: " + Sender + ": " + Message; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Mode(string Sender, string Message) {
-			LastMessageText = "MODE: " + Sender + ": " + Message; LastMessageTime = DateTime.Now;
+			LastMessageText = "MODE: " + Sender + ": " + Message; LastMessageTime = DateTime.UtcNow;
 		}
 
 		public void Names(string[] NameArr) {
@@ -137,7 +137,7 @@ namespace IRCLogger.IRC {
 					AppLog.WriteLine(1, "ERROR", "User " + Sender + " tried to change nick to " + NewNick + ". IRC let it happen, but it's still in my userlist. Why?");
 				}
 			}
-			LastMessageText = "NICK: " + Sender + " => " + NewNick; LastMessageTime = DateTime.Now;
+			LastMessageText = "NICK: " + Sender + " => " + NewNick; LastMessageTime = DateTime.UtcNow;
 		}
 
 	}

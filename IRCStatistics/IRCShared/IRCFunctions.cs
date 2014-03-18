@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Reflection;
 
-namespace IRCLogger.IRC {
+namespace IRCShared {
 	public static class IRCFunctions {
 
 		public static string Join(string Channel, string Password) {
@@ -25,6 +25,7 @@ namespace IRCLogger.IRC {
 		}
 
 		public static string CTCPTimeReply(string Username) {
+			// Not UTC because it should reflect local time.
 			return "NOTICE " + Username + " :\x01TIME " + DateTime.Now.ToString("ddd MMM dd HH:mm:ss yyyy") + "\x01";
 		}
 

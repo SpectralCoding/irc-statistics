@@ -11,36 +11,30 @@ using MySql.Data.MySqlClient;
 using IRCStatistician.Support;
 using System.Data;
 using System.Reflection;
+using IRCStatistician.IRC;
 
 namespace IRCStatistician.LogMgmt {
 	class NetworkProcessor {
-		public List<string> Channels;
-		private string m_ServerHost;
-		private int m_ServerPort;
-		private string m_ServerPass;
-		private string m_RealName;
-		private string m_Nick;
-		private string m_AltNick;
-		private string m_Network;
-		private int m_ID;
+		public Network Network;
 		private Dictionary<string, LogFileRow> m_LogTable;
 
-		public string Hostname { get { return m_ServerHost; } set { m_ServerHost = value; } }
-		public int Port { get { return m_ServerPort; } set { m_ServerPort = value; } }
-		public string Pass { get { return m_ServerPass; } set { m_ServerPass = value; } }
-		public string RealName { get { return m_RealName; } set { m_RealName = value; } }
-		public string Nick { get { return m_Nick; } set { m_Nick = value; } }
-		public string AltNick { get { return m_AltNick; } set { m_AltNick = value; } }
-		public string Network { get { return m_Network; } set { m_Network = value; } }
-		public int ID { get { return m_ID; } set { m_ID = value; } }
-
-		public NetworkProcessor() {
+		public NetworkProcessor(DataRow NetRow) {
+			Network = new Network();
+			Network.Id = Convert.ToInt32(NetRow["id"]);
+			Network.Hostname = NetRow["server"].ToString();
+			Network.Name = NetRow["name"].ToString();
+			Network.Port = Convert.ToInt32(NetRow["port"]);
+			Network.Pass = NetRow["password"].ToString();
+			Network.RealName = NetRow["realname"].ToString();
+			Network.Nick = NetRow["nickname"].ToString();
+			Network.AltNick = NetRow["altnickname"].ToString();
+			Network.Channels = new Dictionary<string, Channel>();
 		}
 
 		public void Process(Dictionary<string, LogFileRow> LogTable) {
 			m_LogTable = LogTable;
 			AppLog.WriteLine(5, "STATUS", "Entered IRCStatistician.NetworkProcessor.Process().");
-			string[] LogFiles = Directory.GetFiles(@"chatlogs/", m_Network + "_" + m_ID + "_????????*.???");
+			string[] LogFiles = Directory.GetFiles(@"chatlogs/", Network.Name + "_" + Network.Id + "_????????*.???");
 			foreach (string CurLogFile in LogFiles) {
 				string Extension = Path.GetExtension(CurLogFile);
 				if (NeedToProcess(CurLogFile)) {
@@ -62,30 +56,6 @@ namespace IRCStatistician.LogMgmt {
 
 		}
 
-		private LogFileRow CreateLFR(string Filename) {
-			LogFileRow Temp = new LogFileRow();
-			Temp.Filename = Filename;
-			Temp.LastReadSize = (new FileInfo(Filename)).Length;
-			Temp.ProductVer = Assembly.GetExecutingAssembly().GetName().Version.ToString();
-			return Temp;
-		}
-
-		private bool NeedToProcess(string Filename) {
-			// If the entry exists in the table
-			if (m_LogTable.ContainsKey(Filename)) {
-				// And the size matches
-				if ((new FileInfo(Filename)).Length == m_LogTable[Filename].LastReadSize) {
-					// And we've processes it using the latest revision of code
-					if (Assembly.GetExecutingAssembly().GetName().Version.ToString() == m_LogTable[Filename].ProductVer) {
-						// Then we don't need to process it
-						return false;
-					}
-				}
-			}
-			// Otherwise, process it
-			return true;
-		}
-
 		public void ProcessZip(string ZipOfLogs) {
 			using (ZipFile LogZip = ZipFile.Read(ZipOfLogs)) {
 				foreach (ZipEntry ZipEntry in LogZip) {
@@ -105,9 +75,33 @@ namespace IRCStatistician.LogMgmt {
 			TextReader LogTextReader = new StringReader(Data);
 			string CurLine;
 			int i = 0;
+			DateTime StartOfDay = DateTime.MinValue;
+			DateTime Timestamp = DateTime.MinValue;
 			while ((CurLine = LogTextReader.ReadLine()) != null) {
+				if (CurLine.Substring(0, 1) == "#") {
+					if (CurLine.Substring(0, 9) == "# Opened:") {
+						string DayStr = CurLine.Substring(10);
+						StartOfDay = Convert.ToDateTime(DayStr.Substring(0, DayStr.IndexOf(' ')));
+					}
+					// Is a comment
+				} else {
+					string TimeNum = CurLine.Substring(0, CurLine.IndexOf(' '));
+					Timestamp = StartOfDay.AddMilliseconds(Convert.ToDouble(TimeNum));
+					CurLine = CurLine.Substring(TimeNum.Length + 1);
+					if (CurLine.Substring(0, 1) == ":") { 
+						CurLine = CurLine.Substring(1);
+						string[] ParameterSplit = CurLine.Split(" ".ToCharArray(), 3, StringSplitOptions.RemoveEmptyEntries);
+						string Sender = ParameterSplit[0];
+						string Command = ParameterSplit[1];
+						string Parameters = ParameterSplit[2];
+						// Even though we've logged it, we still need to send it down
+						// the line for stuff like PING, CTCP, joining channels, etc.
+						//Network.Parse(Timestamp, Sender, Command, Parameters);
+					} else {
+						AppLog.WriteLine(5, "DEBUG", "Unknown Line Format: " + CurLine);
+					}
+				}
 				i++;
-				//Console.WriteLine(CurLine);
 			}
 		}
 
@@ -128,6 +122,32 @@ namespace IRCStatistician.LogMgmt {
 			Cmd.Parameters.AddWithValue("@productver", LogFileRow.ProductVer);
 			int ReturnVal = Cmd.ExecuteNonQuery();
 		}
+
+		private LogFileRow CreateLFR(string Filename) {
+			LogFileRow Temp = new LogFileRow();
+			Temp.Filename = Filename;
+			Temp.LastReadSize = (new FileInfo(Filename)).Length;
+			Temp.ProductVer = Assembly.GetExecutingAssembly().GetName().Version.ToString();
+			return Temp;
+		}
+
+		private bool NeedToProcess(string Filename) {
+			// If the entry exists in the table
+			if (m_LogTable.ContainsKey(Filename)) {
+				// And the size matches
+				if ((new FileInfo(Filename)).Length == m_LogTable[Filename].LastReadSize) {
+					// And we've processed it using the latest revision of code
+					if (Assembly.GetExecutingAssembly().GetName().Version.ToString() == m_LogTable[Filename].ProductVer) {
+						// Then we don't need to process it
+						return false;
+					}
+				}
+			}
+			// Otherwise, process it
+			return true;
+		}
+
+
 
 	}
 }

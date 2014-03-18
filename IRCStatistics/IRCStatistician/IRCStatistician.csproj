@@ -51,6 +51,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="IRC\Channel.cs" />
+    <Compile Include="IRC\Network.cs" />
     <Compile Include="LogMgmt\Compressor.cs" />
     <Compile Include="LogMgmt\NetworkProcessor.cs" />
     <Compile Include="Processing\ChannelProcessor.cs" />

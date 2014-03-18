@@ -11,6 +11,7 @@ using System.Reflection;
 using IRCShared;
 using IRCStatistician.Support;
 using IRCStatistician.LogMgmt;
+using IRCStatistician.IRC;
 
 namespace IRCStatistician {
 	class Program {
@@ -53,19 +54,10 @@ namespace IRCStatistician {
 			ChannelDataReader.Close();
 			// Organize them together.
 			foreach (DataRow CurNetwork in NetworkTable.Rows) {
-				NetworkProcessor tempLW = new NetworkProcessor();
-				tempLW.ID = Convert.ToInt32(CurNetwork["id"]);
-				tempLW.Hostname = CurNetwork["server"].ToString();
-				tempLW.Network = CurNetwork["name"].ToString();
-				tempLW.Port = Convert.ToInt32(CurNetwork["port"]);
-				tempLW.Pass = CurNetwork["password"].ToString();
-				tempLW.RealName = CurNetwork["realname"].ToString();
-				tempLW.Nick = CurNetwork["nickname"].ToString();
-				tempLW.AltNick = CurNetwork["altnickname"].ToString();
-				tempLW.Channels = new List<string>();
+				NetworkProcessor tempLW = new NetworkProcessor(CurNetwork);
 				foreach (DataRow CurChannel in ChannelTable.Rows) {
-					if (Convert.ToInt32(CurChannel["networkid"]) == tempLW.ID) {
-						tempLW.Channels.Add(CurChannel["name"].ToString());
+					if (Convert.ToInt32(CurChannel["networkid"]) == tempLW.Network.Id) {
+						tempLW.Network.Channels.Add(CurChannel["name"].ToString(), new Channel(CurChannel["name"].ToString()));
 					}
 				}
 				returnList.Add(tempLW);

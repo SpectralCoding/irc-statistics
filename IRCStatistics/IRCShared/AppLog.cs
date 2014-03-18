@@ -21,7 +21,7 @@ namespace IRCShared {
 			if (!Directory.Exists("logs/")) {
 				Directory.CreateDirectory("logs/");
 			}
-			m_LogFile = new FileStream(@"logs/" + DateTime.Now.ToString("yyMMdd-HHmmss") + ".log", FileMode.Create, FileAccess.ReadWrite);
+			m_LogFile = new FileStream(@"logs/" + DateTime.UtcNow.ToString("yyMMdd-HHmmss") + ".log", FileMode.Create, FileAccess.ReadWrite);
 			m_LogStream = new StreamWriter(m_LogFile);
 			m_LogStream.AutoFlush = true;
 		}
@@ -52,7 +52,7 @@ namespace IRCShared {
 					}
 					string Output;
 					if (FirstLine) {
-						Output = String.Format("{0:HH:mm:ss.fff} [{1,-6}]\t{2}", DateTime.Now, LogType, LineToAdd);
+						Output = String.Format("{0:HH:mm:ss.fff} [{1,-6}]\t{2}", DateTime.UtcNow, LogType, LineToAdd);
 						m_LogStream.WriteLine(Output);
 						Console.WriteLine(Output);
 					} else {

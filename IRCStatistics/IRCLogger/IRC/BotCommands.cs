@@ -302,7 +302,7 @@ namespace IRCLogger.IRC {
 					if (CurChannel.Value.LastMessageTime == null) {
 						m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - Never"));
 					} else {
-						TimeSpan tempTS = DateTime.Now.Subtract(CurChannel.Value.LastMessageTime);
+						TimeSpan tempTS = DateTime.UtcNow.Subtract(CurChannel.Value.LastMessageTime);
 						m_ParentServer.Send(IRCFunctions.PrivMsg(IRCFunctions.GetNickFromHostString(Sender), "     " + CurChannel.Value.Name + " - " + Functions.MillisecondsToHumanReadable(tempTS.TotalMilliseconds) + " ago: " + CurChannel.Value.LastMessageText));
 					}
 				}
