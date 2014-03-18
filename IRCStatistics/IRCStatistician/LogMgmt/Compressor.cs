@@ -14,7 +14,7 @@ namespace IRCStatistician.LogMgmt {
 
 		public static void Compress() {
 			AppLog.WriteLine(5, "STATUS", "Entered IRCStatistician.Compressor.Compress().");
-			string[] Files = Directory.GetFiles(@"chatlogs/", "*_*_????????-??.log");
+			string[] Files = Directory.GetFiles(@"chatlogs/", "*_*_????????-??.log"); 
 			Dictionary<string, List<string>> NetworkFiles = new Dictionary<string, List<string>>();
 			// Get the list of Network filename prefixes
 			foreach (string CurFile in Files) {
