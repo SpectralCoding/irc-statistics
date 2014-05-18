@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using IRCShared;
+using IRCStatistician.Support;
 
 namespace IRCStatistician.IRC {
 	class Network {
@@ -29,7 +30,7 @@ namespace IRCStatistician.IRC {
 		public Network() {
 
 		}
-		public void Parse(string Sender, string Command, string Parameters) {
+		public void Parse(DateTime Timestamp, uint TimeframeID, Sender Sender, string Command, string Parameters) {
 			string[] ParamSplit = Parameters.Split(" ".ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
 			switch (Command.ToUpper()) {
 				case "353":
@@ -37,7 +38,7 @@ namespace IRCStatistician.IRC {
 					for (int i = 0; i < ParamSplit.Length; i++) {
 						if (ParamSplit[i].Substring(0, 1) == "#") {
 							// Skip to where we see the channel name.
-							string Chan = ParamSplit[i];
+							string Chan = ParamSplit[i].ToLower();
 							ParamSplit[i + 1] = ParamSplit[i + 1].Substring(1);
 							string[] NameArr = new string[ParamSplit.Length - i - 1];
 							Array.Copy(ParamSplit, i + 1, NameArr, 0, ParamSplit.Length - i - 1);
@@ -51,59 +52,65 @@ namespace IRCStatistician.IRC {
 					// :adams.freenode.net 470 SomethingKewl #windows ##windows :Forwarding to another channel
 					// Do we need to do anything here for stats? More code in IRCLogger.Server.Parse()
 				case "JOIN":
+					ParamSplit[0] = ParamSplit[0].ToLower();
 					if (ParamSplit[0].Contains(":")) {
 						// Fix because some IRCds send "JOIN :#channel" instead of "JOIN #channel"
-						ParamSplit[0] = ParamSplit[0].Substring(1);
+						ParamSplit[0] = ParamSplit[0].Substring(1).ToLower();
 					}
-					Channels[ParamSplit[0]].Join(Sender);
+					Channels[ParamSplit[0]].Join(Timestamp, TimeframeID, Sender);
 					break;
 				case "PART":
+					ParamSplit[0] = ParamSplit[0].ToLower();
 					if (ParamSplit.Length >= 2) {
 						string PartMsg = Parameters.Substring(Parameters.IndexOf(":") + 1);
 						if (PartMsg.Length == 0) {
-							Channels[ParamSplit[0]].Part(Sender, String.Empty);
+							Channels[ParamSplit[0]].Part(Timestamp, TimeframeID, Sender, String.Empty);
 						} else {
 							if ((PartMsg.Substring(0, 1) == "\"") && (PartMsg.Substring(PartMsg.Length - 1, 1) == "\"")) {
 								PartMsg = PartMsg.Substring(1, PartMsg.Length - 2);
 							}
 						}
-						Channels[ParamSplit[0]].Part(Sender, PartMsg);
+						Channels[ParamSplit[0]].Part(Timestamp, TimeframeID, Sender, PartMsg);
 					} else {
-						Channels[ParamSplit[0]].Part(Sender, String.Empty);
+						Channels[ParamSplit[0]].Part(Timestamp, TimeframeID, Sender, String.Empty);
 					}
 					break;
 				case "KICK":
-					Channels[ParamSplit[0]].Kick(Sender, ParamSplit[1], Functions.CombineAfterIndex(ParamSplit, " ", 2).Substring(1));
+					ParamSplit[0] = ParamSplit[0].ToLower();
+					Channels[ParamSplit[0]].Kick(Timestamp, TimeframeID, Sender, ParamSplit[1], Functions.CombineAfterIndex(ParamSplit, " ", 2).Substring(1));
 					break;
 				case "INVITE":
 					// TODO: Not sure how we want to handle this.
 					break;
 				case "NICK":
-					if (IRCFunctions.GetNickFromHostString(Sender) == m_Nick) {
+					if (IRCFunctions.GetNickFromHostString(Sender.SenderStr) == m_Nick) {
 						m_Nick = Parameters.Substring(1);
 					}
 					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
-						Channels[CurKVP.Key].Nick(Sender, Parameters.Substring(1));
+						Channels[CurKVP.Key].Nick(Timestamp, TimeframeID, Sender, Parameters.Substring(1));
 					}
 					break;
 				case "QUIT":
 					foreach (KeyValuePair<string, Channel> CurKVP in Channels) {
-						Channels[CurKVP.Key].Quit(Sender, Parameters.Substring(1));
+						Channels[CurKVP.Key].Quit(Timestamp, TimeframeID, Sender, Parameters.Substring(1));
 					}
 					break;
 				case "TOPIC":
+					ParamSplit[0] = ParamSplit[0].ToLower();
 					string Topic = Parameters.Substring(Parameters.IndexOf(":") + 1);
-					Channels[ParamSplit[0]].Topic(Sender, Topic);
+					Channels[ParamSplit[0]].Topic(Timestamp, TimeframeID, Sender, Topic);
 					break;
 				case "MODE":
+					ParamSplit[0] = ParamSplit[0].ToLower();
 					if (ParamSplit[0].Substring(0, 1) == "#") {
 						// Is a channel mode
-						Channels[ParamSplit[0]].Mode(Sender, Functions.CombineAfterIndex(ParamSplit, " ", 1));
+						Channels[ParamSplit[0]].Mode(Timestamp, TimeframeID, Sender, Functions.CombineAfterIndex(ParamSplit, " ", 1));
 					} else {
 						// Is not going to a channel. Probably me?
 					}
 					break;
 				case "PRIVMSG":
+					ParamSplit[0] = ParamSplit[0].ToLower();
 					string MsgText = Parameters.Substring(Parameters.IndexOf(":") + 1);
 					if (ParamSplit[0].Substring(0, 1) == "#") {
 						// Is going to a channel
@@ -113,13 +120,13 @@ namespace IRCStatistician.IRC {
 							string[] PrivMsgSplit = MsgText.Split(" ".ToCharArray(), 2);
 							switch (PrivMsgSplit[0].ToUpper()) {
 								case "ACTION":
-									Channels[ParamSplit[0]].Action(Sender, PrivMsgSplit[1]);
+									Channels[ParamSplit[0]].Action(Timestamp, TimeframeID, Sender, PrivMsgSplit[1]);
 									break;
 								// Maybe other stuff goes here like channel wide CTCPs?
 							}
 						} else {
 							// If this is just a normal PRIVMSG.
-							Channels[ParamSplit[0]].Message(Sender, MsgText);
+							Channels[ParamSplit[0]].Message(Timestamp, TimeframeID, Sender, MsgText);
 						}
 					} else {
 						// Is not going to a channel. Probably just me?

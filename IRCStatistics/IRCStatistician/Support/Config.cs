@@ -14,6 +14,7 @@ namespace IRCStatistician.Support {
 		private static string m_SQLPassword;
 		private static string m_SQLDatabase;
 		private static string m_SQLTablePrefix;
+		private static int m_Resolution;
 
 		public static string SQLServerHost { get { return m_SQLServerHost; } set { m_SQLServerHost = value; } }
 		public static int SQLServerPort { get { return m_SQLServerPort; } set { m_SQLServerPort = value; } }
@@ -21,6 +22,7 @@ namespace IRCStatistician.Support {
 		public static string SQLPassword { get { return m_SQLPassword; } set { m_SQLPassword = value; } }
 		public static string SQLDatabase { get { return m_SQLDatabase; } set { m_SQLDatabase = value; } }
 		public static string SQLTablePrefix { get { return m_SQLTablePrefix; } set { m_SQLTablePrefix = value; } }
+		public static int Resolution { get { return m_Resolution; } set { m_Resolution = value; } }
 		public static void LoadConfig() {
 			if (File.Exists("IRCStatistician.conf")) {
 				AppLog.WriteLine(1, "STATUS", "Loading configuration from IRCStatistician.conf");
@@ -48,6 +50,9 @@ namespace IRCStatistician.Support {
 								break;
 							case "sqltableprefix":
 								m_SQLTablePrefix = CurLineSplit[1];
+								break;
+							case "resolution":
+								m_Resolution = Convert.ToInt32(CurLineSplit[1]);
 								break;
 							default:
 								AppLog.WriteLine(1, "ERROR", "Unknown Configuration Option: " + CurLineSplit[0] + " = " + CurLineSplit[1]);

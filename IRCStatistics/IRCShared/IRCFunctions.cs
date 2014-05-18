@@ -44,6 +44,21 @@ namespace IRCShared {
 
 		}
 
+		public static Sender ParseSender(string SenderStr) {
+			Sender TmpSender = new Sender();
+			TmpSender.SenderStr = SenderStr;
+			if (SenderStr.Contains("!") && SenderStr.Contains("@")) {
+				string[] TempSender = SenderStr.Split('!');
+				TmpSender.Nick = TempSender[0];
+				TempSender = TempSender[1].Split('@');
+				TmpSender.Ident = TempSender[0];
+				TmpSender.Host = TempSender[1];
+			} else {
+				TmpSender.Server = SenderStr;
+			}
+			return TmpSender;
+		}
+
 		public static string GetUserFromHostString(string HostString, bool RemoveTilde = true) {
 			if (HostString.Contains("!") && HostString.Contains("@")) {
 				string[] TempSplit = HostString.Split("!".ToCharArray());

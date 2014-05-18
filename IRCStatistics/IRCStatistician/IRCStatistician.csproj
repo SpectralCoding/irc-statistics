@@ -54,10 +54,10 @@
     <Compile Include="IRC\Network.cs" />
     <Compile Include="LogMgmt\Compressor.cs" />
     <Compile Include="LogMgmt\NetworkProcessor.cs" />
-    <Compile Include="Processing\ChannelProcessor.cs" />
+    <Compile Include="Processing\ChannelFacts.cs" />
     <Compile Include="Processing\ProcessManager.cs" />
+    <Compile Include="Processing\User.cs" />
     <Compile Include="Processing\UserFacts.cs" />
-    <Compile Include="Processing\UserProcessor.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Support\Config.cs" />

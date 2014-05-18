@@ -8,10 +8,11 @@ using Ionic.Zip;
 using IRCShared;
 using MySql.Data;
 using MySql.Data.MySqlClient;
-using IRCStatistician.Support;
 using System.Data;
 using System.Reflection;
 using IRCStatistician.IRC;
+using IRCStatistician.Support;
+using IRCStatistician.Processing;
 
 namespace IRCStatistician.LogMgmt {
 	class NetworkProcessor {
@@ -53,6 +54,32 @@ namespace IRCStatistician.LogMgmt {
 					AppLog.WriteLine(1, "STATUS", "Skipping File: " + CurLogFile);
 				}
 			}
+			AppLog.WriteLine(1, "DEBUG",
+				"Time" +
+				"\tActions" +
+				"\tJoins" +
+				"\tKicks" +
+				"\tMessages" +
+				"\tModesSet" +
+				"\tNickChanges" +
+				"\tParts" +
+				"\tQuits" +
+				"\tTopicsSet"
+			);
+			foreach (KeyValuePair<uint, ChannelFacts> CurKVP in Network.Channels["#xkcd"].ChannelFacts) {
+				AppLog.WriteLine(1, "DEBUG",
+					CurKVP.Key +
+					"\t" + CurKVP.Value.Actions +
+					"\t" + CurKVP.Value.Joins +
+					"\t" + CurKVP.Value.Kicks +
+					"\t" + CurKVP.Value.Messages +
+					"\t" + CurKVP.Value.ModesSet +
+					"\t" + CurKVP.Value.NickChanges +
+					"\t" + CurKVP.Value.Parts +
+					"\t" + CurKVP.Value.Quits +
+					"\t" + CurKVP.Value.TopicsSet
+				);
+			}
 
 		}
 
@@ -79,24 +106,26 @@ namespace IRCStatistician.LogMgmt {
 			DateTime Timestamp = DateTime.MinValue;
 			while ((CurLine = LogTextReader.ReadLine()) != null) {
 				if (CurLine.Substring(0, 1) == "#") {
-					if (CurLine.Substring(0, 9) == "# Opened:") {
-						string DayStr = CurLine.Substring(10);
+					if (CurLine.Substring(0, 15) == "# Opened (UTC):") {
+						string DayStr = CurLine.Substring(16);
 						StartOfDay = Convert.ToDateTime(DayStr.Substring(0, DayStr.IndexOf(' ')));
 					}
 					// Is a comment
 				} else {
 					string TimeNum = CurLine.Substring(0, CurLine.IndexOf(' '));
 					Timestamp = StartOfDay.AddMilliseconds(Convert.ToDouble(TimeNum));
+					// The will return the number of whole Config.Resolution chunks that have passed since Jan 1 2014.
+					uint TimeframeID = (uint)(((Timestamp - new DateTime(2014, 1, 1)).TotalSeconds) / Config.Resolution);
 					CurLine = CurLine.Substring(TimeNum.Length + 1);
 					if (CurLine.Substring(0, 1) == ":") { 
 						CurLine = CurLine.Substring(1);
 						string[] ParameterSplit = CurLine.Split(" ".ToCharArray(), 3, StringSplitOptions.RemoveEmptyEntries);
-						string Sender = ParameterSplit[0];
+						Sender Sender = IRCFunctions.ParseSender(ParameterSplit[0]);
 						string Command = ParameterSplit[1];
 						string Parameters = ParameterSplit[2];
-						// Even though we've logged it, we still need to send it down
-						// the line for stuff like PING, CTCP, joining channels, etc.
-						//Network.Parse(Timestamp, Sender, Command, Parameters);
+						Network.Parse(Timestamp, TimeframeID, Sender, Command, Parameters);
+					} else if (CurLine.Substring(0, 4) == "PING") {
+						// Do anything here?
 					} else {
 						AppLog.WriteLine(5, "DEBUG", "Unknown Line Format: " + CurLine);
 					}
